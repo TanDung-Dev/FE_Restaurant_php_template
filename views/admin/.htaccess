@@ -1,0 +1,13 @@
+# Chuyển hướng tất cả request tới index.php nếu không tìm thấy file
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ index.php [L]
+</IfModule>
+
+# Có thể thêm xác thực htaccess (tùy chọn, vì chúng ta đã có kiểm tra quyền trong PHP)
+# AuthType Basic
+# AuthName "Admin Area"
+# AuthUserFile /path/to/.htpasswd
+# Require valid-user

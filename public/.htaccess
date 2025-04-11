@@ -1,0 +1,22 @@
+# # Enable rewriting
+# RewriteEngine On
+
+# # Serve files directly if they exist
+# RewriteCond %{REQUEST_FILENAME} !-f
+# RewriteCond %{REQUEST_FILENAME} !-d
+
+# # Otherwise, redirect to index.php
+# RewriteRule ^(.*)$ index.php [QSA,L]
+
+# Enable rewriting
+RewriteEngine On
+
+# Allow direct access to CSS, JS, images
+RewriteCond %{REQUEST_URI} !\.(css|js|jpg|jpeg|png|gif|ico)$
+
+# Serve files directly if they exist
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Otherwise, redirect to index.php
+RewriteRule ^(.*)$ index.php [QSA,L]
