@@ -166,6 +166,45 @@ try {
             echo json_encode($response);
             break;
         
+        case 'check_momo_payment':
+            if (!isset($_GET['id'])) {
+                echo json_encode(['success' => false, 'message' => 'Thiếu ID giao dịch']);
+                exit;
+            }
+            $response = apiRequest('/thanh-toan/' . $_GET['id'], 'GET');
+            debugLog("MoMo payment status response: " . json_encode($response));
+            echo json_encode($response);
+            break;
+            
+        case 'simulate_momo_payment':
+            if (!isset($_POST['payment_id'])) {
+                echo json_encode(['success' => false, 'message' => 'Thiếu ID thanh toán']);
+                exit;
+            }
+            
+            $paymentId = $_POST['payment_id'];
+            debugLog("Simulating successful MoMo payment for ID: " . $paymentId);
+            
+            // Cập nhật trạng thái thanh toán thành "đã thanh toán"
+            $updateData = [
+                'TrangThaiThanhToan' => 1,
+                'NgayThanhToan' => date('Y-m-d H:i:s'),
+                'MaGiaoDich' => 'SIMULATED_MOMO_' . time()
+            ];
+            
+            // Gọi API để cập nhật trạng thái thanh toán
+            $response = apiRequest('/thanh-toan/' . $paymentId, 'POST', $updateData);
+            debugLog("Update payment response: " . json_encode($response));
+            
+            if ($response['success']) {
+                // Chuyển hướng đến trang thanh toán thành công
+                header('Location: /restaurant-website/public/payment/payment-success?id=' . $paymentId);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Không thể cập nhật trạng thái thanh toán']);
+            }
+            exit;
+            break;
+        
         default:
             echo json_encode(['success' => false, 'message' => 'Invalid action']);
             break;

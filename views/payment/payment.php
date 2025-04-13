@@ -5,11 +5,15 @@ $user = getCurrentUser();
 
 // Lấy ID đặt bàn từ URL
 $bookingId = $_GET['id'] ?? 0;
-
 if (!$bookingId) {
     header('Location: /restaurant-website/public/booking/my-bookings');
     exit;
 }
+
+// Khởi tạo biến ngay từ đầu
+$paymentMethod = 0;
+$errorMsg = "";
+$successMsg = "";
 
 // Lấy thông tin đặt bàn
 $bookingResponse = apiRequest('/dat-ban/' . $bookingId, 'GET');
@@ -37,43 +41,98 @@ foreach ($orderedFoods as $food) {
 }
 
 // Xử lý thanh toán
-$successMsg = "";
-$errorMsg = "";
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['payment_method'])) {
         $paymentMethod = $_POST['payment_method'];
         
-        // Dữ liệu thanh toán
-        $paymentData = [
-            'ID_ThongTinDatBan' => $bookingId,
-            'SoLuong' => $totalAmount,
-            'PhuongThucThanhToan' => $paymentMethod, // 1: Tiền mặt, 3: MoMo
-            'TrangThaiThanhToan' => 1, // Đã thanh toán
-            'MaGiaoDich' => $paymentMethod == 3 ? 'MOMO_' . time() : 'CASH_' . time()
-        ];
-        
         if ($paymentMethod == 1) { // Tiền mặt
-            // Gọi API thanh toán
+            // Dữ liệu thanh toán tiền mặt
+            $paymentData = [
+                'ID_ThongTinDatBan' => $bookingId,
+                'PhuongThucThanhToan' => 1, // 1: Tiền mặt
+                'MaGiaoDich' => 'CASH_' . time()
+            ];
+            
+            // Gọi API thanh toán thông thường
             $response = apiRequest('/thanh-toan', 'POST', $paymentData);
             
             if ($response['success']) {
                 // Chuyển hướng đến trang xác nhận thanh toán
-                header('Location: /restaurant-website/public/payment/payment-success?id=' . $bookingId);
+                header('Location: /restaurant-website/public/payment/payment-success?id=' . $response['data']['ID_ThanhToan']);
                 exit;
             } else {
                 $errorMsg = $response['message'] ?? 'Có lỗi xảy ra khi thanh toán!';
             }
-        } else if ($paymentMethod == 3) { // MoMo
-            // Lưu thông tin thanh toán vào session để xử lý sau khi quay về từ MoMo
-            $_SESSION['pending_payment'] = $paymentData;
+        } else if ($paymentMethod == 4) { // MoMo
+            // Đầu tiên, tạo thanh toán thông thường với phương thức MoMo
+            $paymentData = [
+                'ID_ThongTinDatBan' => $bookingId,
+                'PhuongThucThanhToan' => 4, // 4: MoMo
+                'MaGiaoDich' => 'TEMP_' . time() // Mã giao dịch tạm thời
+            ];
             
-            // Mô phỏng chuyển hướng đến MoMo (trong thực tế cần tích hợp API MoMo)
-            // Đây chỉ là demo, bạn cần tích hợp API MoMo thực tế
-            header('Location: /restaurant-website/public/payment/momo-redirect?amount=' . $totalAmount . '&orderId=' . $bookingId);
-            exit;
+            // Gọi API tạo thanh toán thông thường
+            $response = apiRequest('/thanh-toan', 'POST', $paymentData);
+            error_log("Regular payment response: " . json_encode($response));
+            
+            if ($response['success']) {
+                // Lưu ID thanh toán vào session
+                $paymentId = $response['data']['ID_ThanhToan'];
+                $_SESSION['momo_payment_id'] = $paymentId;
+                
+                // Chuyển hướng đến trang hiển thị mã QR
+                header('Location: /restaurant-website/public/payment/momo-qr?id=' . $paymentId);
+                exit;
+            } else {
+                $errorMsg = $response['message'] ?? 'Có lỗi xảy ra khi tạo thanh toán!';
+            }
         }
     }
+}
+
+// Kiểm tra nếu có thông báo lỗi từ quá trình thanh toán MoMo
+if (isset($_GET['momo_error'])) {
+    $errorMsg = urldecode($_GET['momo_error']);
+}
+
+// Phần debug và test API (khi cần thiết)
+if (isset($_GET['debug']) && $_GET['debug'] == 1) {
+    echo "<pre>Session Data: ";
+    var_dump($_SESSION);
+    echo "</pre>";
+    
+    $token = $_SESSION['auth_token'] ?? 'no-token';
+    $testBookingId = $bookingId;
+    
+    echo "<pre>Test with Token: " . substr($token, 0, 10) . "...</pre>";
+    
+    // Thay đổi URL nếu cần
+    $testUrl = API_BASE_URL . '/thanh-toan/momo';
+    
+    // Đảm bảo dữ liệu đầy đủ
+    $testData = json_encode([
+        'ID_ThongTinDatBan' => (int)$testBookingId // Đảm bảo là số nguyên nếu cần
+    ]);
+
+    echo "<pre>Test Request Data: " . htmlspecialchars($testData) . "</pre>";
+
+    $testHeaders = [
+        'Content-Type: application/json',
+        'Accept: application/json',
+        'Authorization: Bearer ' . $token
+    ];
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $testUrl);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $testData);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $testHeaders);
+    $testResponse = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    echo "<pre>Test API Response ($httpCode): " . htmlspecialchars($testResponse) . "</pre>";
 }
 ?>
 
@@ -232,12 +291,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="col-lg-12">
                     <div class="breadcrumb-inner text-center">
                         <h2>Thanh toán</h2>
-                        <ul class="page-list">
+                        <!-- <ul class="page-list">
                             <li><a href="/restaurant-website/public/">Trang chủ</a></li>
                             <li><a href="/restaurant-website/public/booking/my-bookings">Đơn đặt bàn của tôi</a></li>
                             <li><a href="/restaurant-website/public/user/order-food?id=<?php echo $bookingId; ?>">Đặt món ăn</a></li>
                             <li>Thanh toán</li>
-                        </ul>
+                        </ul> -->
                     </div>
                 </div>
             </div>
@@ -344,7 +403,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             <div class="payment-option-description">Thanh toán tại nhà hàng</div>
                                         </div>
                                         
-                                        <div class="payment-option" data-payment="3" onclick="selectPaymentMethod(3)">
+                                        <div class="payment-option" data-payment="4" onclick="selectPaymentMethod(4)">
                                             <img src="/restaurant-website/public/assets/img/payment/momo.png" alt="MoMo">
                                             <div class="payment-option-title">Ví MoMo</div>
                                             <div class="payment-option-description">Thanh toán qua ví điện tử MoMo</div>

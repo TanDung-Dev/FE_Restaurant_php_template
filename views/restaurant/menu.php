@@ -386,8 +386,8 @@ $user = getCurrentUser();
                             <?php else: ?>
                                 <?php foreach ($loaiMonAns as $loai): ?>
                                     <li>
-                                        <a href="menu.php?ma_loai=<?php echo $loai['MaLoai']; ?><?php echo !empty($_GET['id_nhahang']) ? '&id_nhahang=' . $_GET['id_nhahang'] : ''; ?>" 
-                                           class="<?php echo (isset($_GET['ma_loai']) && $_GET['ma_loai'] == $loai['MaLoai']) ? 'active' : ''; ?>">
+                                    <a href="/restaurant-website/public/menu?ma_loai=<?php echo $loai['MaLoai']; ?><?php echo !empty($_GET['id_nhahang']) ? '&id_nhahang=' . $_GET['id_nhahang'] : ''; ?>" 
+                                        class="<?php echo (isset($_GET['ma_loai']) && $_GET['ma_loai'] == $loai['MaLoai']) ? 'active' : ''; ?>">
                                             <?php echo $loai['TenLoai']; ?>
                                         </a>
                                     </li>

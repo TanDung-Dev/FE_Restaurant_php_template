@@ -2,36 +2,74 @@
 require_once 'session.php';
 checkUserLoggedIn();
 
+// Lấy thông số từ MoMo trả về
+$resultCode = $_GET['resultCode'] ?? null;
+$message = $_GET['message'] ?? '';
+$orderId = $_GET['orderId'] ?? '';
+$transId = $_GET['transId'] ?? '';
 $amount = $_GET['amount'] ?? 0;
-$orderId = $_GET['orderId'] ?? 0;
+$extraData = $_GET['extraData'] ?? '';
 
-if (!$amount || !$orderId) {
-    header('Location: /restaurant-website/public/booking/my-bookings');
+// Lấy ID thanh toán từ session
+$paymentId = $_SESSION['momo_payment_id'] ?? null;
+
+if (!$paymentId) {
+    // Không tìm thấy thông tin thanh toán trong session
+    header('Location: /restaurant-website/public/booking/my-bookings?error=invalid_payment');
     exit;
 }
 
-// Trong thực tế, ở đây sẽ tích hợp API MoMo để tạo thanh toán
-// Demo sẽ giả lập quá trình và chuyển hướng người dùng sang trang thành công
+// Xóa ID thanh toán khỏi session
+unset($_SESSION['momo_payment_id']);
 
-// Giả lập quá trình thanh toán MoMo (3 giây)
-sleep(3);
-
-// Lấy dữ liệu thanh toán từ session
-$paymentData = $_SESSION['pending_payment'] ?? null;
-
-if ($paymentData) {
-    // Gọi API thanh toán
-    $response = apiRequest('/thanh-toan', 'POST', $paymentData);
+// Kiểm tra kết quả từ MoMo
+if ($resultCode === '0') { // Thanh toán thành công
+    // Gọi API để kiểm tra trạng thái thanh toán
+    $response = apiRequest('/thanh-toan/momo/status/' . $paymentId, 'GET');
     
-    // Xóa dữ liệu thanh toán từ session
-    unset($_SESSION['pending_payment']);
-    
-    // Chuyển hướng đến trang thành công
-    header('Location: /restaurant-website/public/payment/payment-success?id=' . $orderId);
-    exit;
+    if ($response && $response['success'] && $response['data']['trang_thai_thanh_toan'] == 1) {
+        // Thanh toán đã được xác nhận trên hệ thống
+        header('Location: /restaurant-website/public/payment/payment-success?id=' . $paymentId);
+        exit;
+    } else {
+        // Kiểm tra thêm thông qua IPN - có thể đã được cập nhật trước khi redirect
+        sleep(2); // Đợi IPN xử lý
+        
+        $retryResponse = apiRequest('/thanh-toan/momo/status/' . $paymentId, 'GET');
+        
+        if ($retryResponse && $retryResponse['success'] && $retryResponse['data']['trang_thai_thanh_toan'] == 1) {
+            // Thanh toán đã được xác nhận sau khi đợi
+            header('Location: /restaurant-website/public/payment/payment-success?id=' . $paymentId);
+            exit;
+        } else {
+            // Vẫn chưa cập nhật trạng thái - có thể có vấn đề ở IPN
+            // Cập nhật trạng thái bằng tay nếu cần
+            $updateData = [
+                'TrangThaiThanhToan' => 1,
+                'MaGiaoDich' => $transId
+            ];
+            apiRequest('/thanh-toan/' . $paymentId, 'POST', $updateData);
+            
+            header('Location: /restaurant-website/public/payment/payment-success?id=' . $paymentId);
+            exit;
+        }
+    }
 } else {
-    // Có lỗi xảy ra
-    header('Location: /restaurant-website/public/payment?id=' . $orderId . '&error=payment_failed');
+    // Thanh toán thất bại hoặc bị hủy
+    // Lấy ID đặt bàn từ thanh toán
+    $bookingResponse = apiRequest('/thanh-toan/' . $paymentId, 'GET');
+    $bookingId = null;
+    
+    if ($bookingResponse && $bookingResponse['success']) {
+        $bookingId = $bookingResponse['data']['ID_ThongTinDatBan'];
+    }
+    
+    if ($bookingId) {
+        $errorMessage = urlencode('Thanh toán MoMo không thành công: ' . $message);
+        header('Location: /restaurant-website/public/payment?id=' . $bookingId . '&momo_error=' . $errorMessage);
+    } else {
+        header('Location: /restaurant-website/public/booking/my-bookings?error=payment_failed');
+    }
     exit;
 }
 ?>
@@ -41,7 +79,7 @@ if ($paymentData) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đang chuyển hướng thanh toán - MoMo</title>
+    <title>Đang xử lý thanh toán - MoMo</title>
     <link rel="stylesheet" href="/restaurant-website/public/assets/css/bootstrap.min.css">
     <style>
         body {
@@ -82,9 +120,24 @@ if ($paymentData) {
     <div class="loading-container">
         <img src="/restaurant-website/public/assets/img/payment/momo-logo.png" alt="MoMo" class="momo-logo">
         <div class="spinner"></div>
-        <h3>Đang chuyển hướng đến MoMo...</h3>
-        <p>Vui lòng không đóng trang này.</p>
-        <p>Số tiền: <?php echo number_format($amount, 0, ',', '.'); ?>đ</p>
+        <h3>Đang xử lý thanh toán...</h3>
+        <p>Vui lòng chờ trong giây lát, hệ thống đang xác nhận thanh toán của bạn.</p>
+        <?php if ($resultCode === '0'): ?>
+            <p class="text-success">Thanh toán thành công. Số tiền: <?php echo number_format($amount, 0, ',', '.'); ?>đ</p>
+        <?php else: ?>
+            <p class="text-danger">Thanh toán không thành công: <?php echo htmlspecialchars($message); ?></p>
+        <?php endif; ?>
     </div>
+    
+    <script>
+        // Auto redirect after 5 seconds if not redirected yet
+        setTimeout(function() {
+            <?php if ($resultCode === '0'): ?>
+                window.location.href = '/restaurant-website/public/payment/payment-success?id=<?php echo $paymentId; ?>';
+            <?php else: ?>
+                window.location.href = '/restaurant-website/public/booking/my-bookings';
+            <?php endif; ?>
+        }, 5000);
+    </script>
 </body>
 </html>

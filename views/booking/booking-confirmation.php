@@ -73,17 +73,16 @@ if (!empty($booking['chiTietDatBans']) && !empty($booking['chiTietDatBans'][0]))
     <!-- Page title -->
     <title>Xác nhận đặt bàn - Nhà hàng</title>
     <!-- Favicon -->
-    <link rel="shortcut icon" href="assets/img/logo/favicon.svg">
+    <link rel="shortcut icon" href="/restaurant-website/public/assets/img/logo/favicon.svg">
     <!-- CSS files -->
-    <link rel="stylesheet" href="assets/css/bootstrap.min.css">
-    <link rel="stylesheet" href="assets/css/font-awesome.css">
-    <link rel="stylesheet" href="assets/css/animate.css">
-    <link rel="stylesheet" href="assets/css/magnific-popup.css">
-    <link rel="stylesheet" href="assets/css/meanmenu.css">
-    <link rel="stylesheet" href="assets/css/swiper-bundle.min.css">
-    <link rel="stylesheet" href="assets/css/nice-select.css">
-    <link rel="stylesheet" href="assets/css/main.css">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/restaurant-website/public/assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/restaurant-website/public/assets/css/font-awesome.css">
+    <link rel="stylesheet" href="/restaurant-website/public/assets/css/animate.css">
+    <link rel="stylesheet" href="/restaurant-website/public/assets/css/magnific-popup.css">
+    <link rel="stylesheet" href="/restaurant-website/public/assets/css/meanmenu.css">
+    <link rel="stylesheet" href="/restaurant-website/public/assets/css/swiper-bundle.min.css">
+    <link rel="stylesheet" href="/restaurant-website/public/assets/css/nice-select.css">
+    <link rel="stylesheet" href="/restaurant-website/public/assets/css/main.css">
     <!-- Custom styles for confirmation page -->
     <style>
         .confirmation-section {
@@ -181,7 +180,7 @@ if (!empty($booking['chiTietDatBans']) && !empty($booking['chiTietDatBans'][0]))
     </div>
 
     <!-- Header -->
-    <?php include '../includes/header.php'; ?>
+    <?php include __DIR__ . '/../../app/includes/header.php'; ?>
 
     <!-- Confirmation Section -->
     <section class="confirmation-section">
@@ -290,7 +289,7 @@ if (!empty($booking['chiTietDatBans']) && !empty($booking['chiTietDatBans'][0]))
     </section>
 
     <!-- Footer -->
-    <?php include '../includes/footer.php'; ?>
+    <?php include __DIR__ . '/../../app/includes/footer.php'; ?>
 
     <!-- Back to top area -->
     <div class="scroll-up">
@@ -300,8 +299,18 @@ if (!empty($booking['chiTietDatBans']) && !empty($booking['chiTietDatBans'][0]))
     </div>
 
     <!-- JavaScript files -->
-    <script src="assets/js/jquery-3.7.1.min.js"></script>
-    <script src="assets/js/bootstrap.bundle.min.js"></script>
-    <script src="assets/js/main.js"></script>
+    <script src="/restaurant-website/public/assets/js/jquery-3.7.1.min.js"></script>
+    <script src="/restaurant-website/public/assets/js/viewport.jquery.js"></script>
+    <script src="/restaurant-website/public/assets/js/bootstrap.bundle.min.js"></script>
+    <script src="/restaurant-website/public/assets/js/jquery.nice-select.min.js"></script>
+    <script src="/restaurant-website/public/assets/js/jquery.waypoints.js"></script>
+    <script src="/restaurant-website/public/assets/js/jquery.counterup.min.js"></script>
+    <script src="/restaurant-website/public/assets/js/swiper-bundle.min.js"></script>
+    <script src="/restaurant-website/public/assets/js/jquery.meanmenu.min.js"></script>
+    <script src="/restaurant-website/public/assets/js/jquery.magnific-popup.min.js"></script>
+    <script src="/restaurant-website/public/assets/js/animation.js"></script>
+    <script src="/restaurant-website/public/assets/js/wow.min.js"></script>
+    <script src="/restaurant-website/public/assets/js/contact-from.js"></script>
+    <script src="/restaurant-website/public/assets/js/main.js"></script>
 </body>
 </html>

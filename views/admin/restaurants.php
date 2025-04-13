@@ -134,13 +134,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="description" content="Quản lý nhà hàng - Hệ thống đặt bàn nhà hàng">
     <!-- ======== Page title ============ -->
     <title>Quản lý nhà hàng - Hệ thống đặt bàn nhà hàng</title>
-    <!-- Stylesheets -->
+    <!-- Favicon -->
     <link rel="shortcut icon" href="/restaurant-website/public/assets/img/logo/favicon.svg">
+    <!-- CSS files -->
     <link rel="stylesheet" href="/restaurant-website/public/assets/css/bootstrap.min.css">
     <link rel="stylesheet" href="/restaurant-website/public/assets/css/font-awesome.css">
     <link rel="stylesheet" href="/restaurant-website/public/assets/css/animate.css">
+    <link rel="stylesheet" href="/restaurant-website/public/assets/css/magnific-popup.css">
+    <link rel="stylesheet" href="/restaurant-website/public/assets/css/meanmenu.css">
+    <link rel="stylesheet" href="/restaurant-website/public/assets/css/swiper-bundle.min.css">
+    <link rel="stylesheet" href="/restaurant-website/public/assets/css/nice-select.css">
     <link rel="stylesheet" href="/restaurant-website/public/assets/css/main.css">
-    <link rel="stylesheet" href="/restaurant-website/public/style.css">
     <style>
         .admin-section {
             padding: 80px 0;
@@ -823,13 +827,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <!-- Scroll to top -->
     <a href="#" class="back-to-top"><i class="fas fa-angle-up"></i></a>
 
-    <!-- JavaScript -->
-    <script src="/restaurant-website/public/assets/js/jquery-3.7.1.min.js"></script>
-    <script src="/restaurant-website/public/assets/js/popper.min.js"></script>
-    <script src="/restaurant-website/public/assets/js/bootstrap.min.js"></script>
-    <script src="/restaurant-website/public/assets/js/swiper-bundle.min.js"></script>
+     <!-- JavaScript files -->
+     <script src="/restaurant-website/public/assets/js/jquery-3.7.1.min.js"></script>
+    <script src="/restaurant-website/public/assets/js/viewport.jquery.js"></script>
+    <script src="/restaurant-website/public/assets/js/bootstrap.bundle.min.js"></script>
     <script src="/restaurant-website/public/assets/js/jquery.nice-select.min.js"></script>
-    <script src="/restaurant-website/public/assets/js/jquery-ui.min.js"></script>
+    <script src="/restaurant-website/public/assets/js/jquery.waypoints.js"></script>
+    <script src="/restaurant-website/public/assets/js/jquery.counterup.min.js"></script>
+    <script src="/restaurant-website/public/assets/js/swiper-bundle.min.js"></script>
+    <script src="/restaurant-website/public/assets/js/jquery.meanmenu.min.js"></script>
+    <script src="/restaurant-website/public/assets/js/jquery.magnific-popup.min.js"></script>
+    <script src="/restaurant-website/public/assets/js/animation.js"></script>
+    <script src="/restaurant-website/public/assets/js/wow.min.js"></script>
+    <script src="/restaurant-website/public/assets/js/contact-from.js"></script>
     <script src="/restaurant-website/public/assets/js/main.js"></script>
 
     <script>

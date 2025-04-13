@@ -231,7 +231,7 @@ $recentBookings = $bookingsResponse['data'] ?? [];
                 <div class="col-lg-4">
                     <div class="content-card">
                         <div class="profile-info">
-                            <img src="/restaurant-website/public/assets/img/user/default-avatar.jpg" alt="Profile Image" class="profile-img">
+                          
                             <h3 class="profile-name"><?php echo $user['HoVaTen']; ?></h3>
                             <p class="profile-email"><i class="fas fa-envelope"></i> <?php echo $user['Email']; ?></p>
                             <p class="profile-phone"><i class="fas fa-phone"></i> <?php echo $user['Sdt']; ?></p>

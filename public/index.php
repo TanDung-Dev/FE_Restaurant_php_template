@@ -2,6 +2,9 @@
 require_once 'session.php';
 $user = getCurrentUser();
 
+// Thêm dòng này ở đây, trước khi xử lý bất kỳ route nào
+require_once __DIR__ . '/../app/config/api.php';
+
 $uri = $_SERVER['REQUEST_URI'];
 $base_path = '/restaurant-website/public';
 
@@ -16,6 +19,7 @@ echo "DEBUG: ID = " . ($_GET['id'] ?? 'không có');
 switch ($path) {
     case '':
     case '/':
+    require_once __DIR__ . '/../app/config/api.php';
     case '/index.php':
         // Trang chủ (giữ nguyên nội dung HTML hiện tại)
         break;
@@ -242,14 +246,55 @@ switch ($path) {
         exit;
 
 
-            case '/food/food-detail.php':
-            if (isset($_GET['id'])) {
-                require __DIR__ . '/../views/food/food-detail.php';
+    case '/food/food-detail.php':
+        if (isset($_GET['id'])) {
+            require __DIR__ . '/../views/food/food-detail.php';
+        } else {
+             header('Location: /restaurant-website/public/menu.php');
+        }
+        exit;
+
+        
+
+    case '/booking/booking-confirmation.php':
+    case '/booking/booking-confirmation':
+        if (isset($_GET['id'])) {
+             require __DIR__ . '/../views/booking/booking-confirmation.php';
             } else {
-                header('Location: /restaurant-website/public/menu.php');
+                header('Location: /restaurant-website/public/datban');
+            }
+        exit;
+
+    case '/menu':
+        require __DIR__ . '/../views/restaurant/menu.php';
+        exit;
+            
+        // Nếu bạn cũng muốn hỗ trợ đường dẫn cũ
+    case '/menu.php':
+        require __DIR__ . '/../views/restaurant/menu.php';
+        exit;
+
+        case '/payment/momo-redirect':
+            if (isLoggedIn()) {
+                require __DIR__ . '/../views/payment/momo-redirect.php';
+            } else {
+                header('Location: /restaurant-website/public/login?redirect=payment/momo-redirect');
+                exit;
             }
             exit;
 
+        
+    
+// Thêm vào phần switch case của index.php
+case '/payment/momo-qr':
+    if (isLoggedIn()) {
+        require __DIR__ . '/../views/payment/momo-qr.php';
+    } else {
+        header('Location: /restaurant-website/public/login?redirect=payment/momo-qr');
+        exit;
+    }
+    exit;
+            
     default:
         // Trang lỗi 404 nếu không tìm thấy route
         http_response_code(404);

@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $notifyResponse = apiRequest('/thong-bao/create', 'POST', $notificationData);
             
             // Chuyển hướng đến trang xác nhận đặt bàn
-            header('Location: booking-confirmation.php?id=' . $bookingId);
+            header('Location: /restaurant-website/public/booking/booking-confirmation.php?id=' . $bookingId);
             exit;
         } else {
             $errors[] = $bookingResponse['message'] ?? 'Có lỗi xảy ra khi đặt bàn';
