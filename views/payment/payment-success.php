@@ -338,16 +338,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_review'])) {
                         </div>
                         
                         <?php if ($restaurant && !$userHasReviewed): ?>
-                        <div class="review-section">
+                            <div class="review-section">
                             <h4 class="review-heading">Đánh giá trải nghiệm của bạn</h4>
                             
-                            <?php if ($reviewError): ?>
+                            <?php if (isset($reviewError) && $reviewError): ?>
                             <div class="alert alert-danger">
                                 <i class="fas fa-exclamation-circle"></i> <?php echo $reviewError; ?>
                             </div>
                             <?php endif; ?>
                             
-                            <?php if ($reviewSuccess): ?>
+                            <?php if (isset($reviewSuccess) && $reviewSuccess): ?>
                             <div class="alert alert-success">
                                 <i class="fas fa-check-circle"></i> Cảm ơn bạn đã gửi đánh giá!
                             </div>
@@ -378,6 +378,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_review'])) {
                             </form>
                             <?php endif; ?>
                         </div>
+
+
                         <?php elseif ($userHasReviewed): ?>
                         <div class="review-thanks">
                             <h5><i class="fas fa-heart text-danger"></i> Cảm ơn bạn đã đánh giá!</h5>

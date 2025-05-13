@@ -64,24 +64,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $errorMsg = $response['message'] ?? 'Có lỗi xảy ra khi thanh toán!';
             }
         } else if ($paymentMethod == 4) { // MoMo
-            // Đầu tiên, tạo thanh toán thông thường với phương thức MoMo
+            // Dữ liệu thanh toán MoMo
             $paymentData = [
                 'ID_ThongTinDatBan' => $bookingId,
                 'PhuongThucThanhToan' => 4, // 4: MoMo
-                'MaGiaoDich' => 'TEMP_' . time() // Mã giao dịch tạm thời
+                'SoLuong' => $totalAmount,
+                'TrangThaiThanhToan' => 0, // 0: Chưa thanh toán
+                'MaGiaoDich' => 'MOMO_INIT_' . time()
             ];
             
-            // Gọi API tạo thanh toán thông thường
+            // Gọi API tạo thanh toán trước
             $response = apiRequest('/thanh-toan', 'POST', $paymentData);
-            error_log("Regular payment response: " . json_encode($response));
             
             if ($response['success']) {
                 // Lưu ID thanh toán vào session
-                $paymentId = $response['data']['ID_ThanhToan'];
-                $_SESSION['momo_payment_id'] = $paymentId;
+                $_SESSION['momo_payment_id'] = $response['data']['ID_ThanhToan'];
                 
-                // Chuyển hướng đến trang hiển thị mã QR
-                header('Location: /restaurant-website/public/payment/momo-qr?id=' . $paymentId);
+                // Chuyển hướng đến trang MoMo payment
+                header('Location: /restaurant-website/public/payment/momo-payment?id=' . $response['data']['ID_ThanhToan']);
                 exit;
             } else {
                 $errorMsg = $response['message'] ?? 'Có lỗi xảy ra khi tạo thanh toán!';

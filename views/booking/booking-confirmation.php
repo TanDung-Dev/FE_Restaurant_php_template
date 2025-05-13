@@ -16,6 +16,9 @@ $bookingId = $_GET['id'];
 // Lấy thông tin đặt bàn
 $response = apiRequest('/dat-ban/' . $bookingId, 'GET');
 
+// Debug response
+error_log("Booking response: " . print_r($response, true));
+
 // Kiểm tra kết quả từ API
 if (!isset($response['success']) || !$response['success']) {
     header('Location: datban.php?error=notfound');
@@ -24,41 +27,64 @@ if (!isset($response['success']) || !$response['success']) {
 
 $booking = $response['data'];
 
+// Debug booking data
+error_log("Booking data: " . print_r($booking, true));
+
 // Lấy thông tin chi tiết
 $restaurantId = null;
 $areaId = null;
 $tableId = null;
+$restaurant = null;
+$area = null;
+$table = null;
 
 // Kiểm tra và lấy thông tin từ chi tiết đặt bàn
-if (!empty($booking['chiTietDatBans']) && !empty($booking['chiTietDatBans'][0])) {
+// Kiểm tra cả hai format có thể có
+if (!empty($booking['chi_tiet_dat_bans']) && count($booking['chi_tiet_dat_bans']) > 0) {
+    $tableId = $booking['chi_tiet_dat_bans'][0]['ID_Ban'] ?? null;
+} elseif (!empty($booking['chiTietDatBans']) && count($booking['chiTietDatBans']) > 0) {
     $tableId = $booking['chiTietDatBans'][0]['ID_Ban'] ?? null;
+}
+
+// Debug tableId
+error_log("Table ID: " . ($tableId ?? 'null'));
+
+// Lấy thông tin bàn
+if ($tableId) {
+    $tableResponse = apiRequest('/ban/' . $tableId, 'GET');
+    error_log("Table response: " . print_r($tableResponse, true));
     
-    // Lấy thông tin bàn
-    if ($tableId) {
-        $tableResponse = apiRequest('/ban/' . $tableId, 'GET');
-        $table = $tableResponse['data'] ?? null;
+    if (isset($tableResponse['success']) && $tableResponse['success']) {
+        $table = $tableResponse['data'];
+        $areaId = $table['ID_KhuVuc'] ?? null;
         
-        if ($table) {
-            $areaId = $table['ID_KhuVuc'] ?? null;
+        // Lấy thông tin khu vực
+        if ($areaId) {
+            $areaResponse = apiRequest('/khuvuc/' . $areaId, 'GET');
+            error_log("Area response: " . print_r($areaResponse, true));
             
-            // Lấy thông tin khu vực
-            if ($areaId) {
-                $areaResponse = apiRequest('/khuvuc/' . $areaId, 'GET');
-                $area = $areaResponse['data'] ?? null;
+            if (isset($areaResponse['success']) && $areaResponse['success']) {
+                $area = $areaResponse['data'];
+                $restaurantId = $area['ID_NhaHang'] ?? null;
                 
-                if ($area) {
-                    $restaurantId = $area['ID_NhaHang'] ?? null;
+                // Lấy thông tin nhà hàng
+                if ($restaurantId) {
+                    $restaurantResponse = apiRequest('/nhahang/' . $restaurantId, 'GET');
+                    error_log("Restaurant response: " . print_r($restaurantResponse, true));
                     
-                    // Lấy thông tin nhà hàng
-                    if ($restaurantId) {
-                        $restaurantResponse = apiRequest('/nhahang/' . $restaurantId, 'GET');
-                        $restaurant = $restaurantResponse['data'] ?? null;
+                    if (isset($restaurantResponse['success']) && $restaurantResponse['success']) {
+                        $restaurant = $restaurantResponse['data'];
                     }
                 }
             }
         }
     }
 }
+
+// Debug thông tin tổng hợp
+error_log("Final data: Restaurant=" . ($restaurant ? 'found' : 'null') . 
+          ", Area=" . ($area ? 'found' : 'null') . 
+          ", Table=" . ($table ? 'found' : 'null'));
 ?>
 
 <!DOCTYPE html>
@@ -198,32 +224,109 @@ if (!empty($booking['chiTietDatBans']) && !empty($booking['chiTietDatBans'][0]))
                 </div>
 
                 <div class="booking-details">
-                    <div class="booking-detail-item">
-                        <span class="booking-detail-label">Nhà hàng:</span>
-                        <span class="booking-detail-value"><?php echo isset($restaurant['TenNhaHang']) ? $restaurant['TenNhaHang'] : 'Không có thông tin'; ?></span>
-                    </div>
-                    <div class="booking-detail-item">
-                        <span class="booking-detail-label">Địa chỉ:</span>
-                        <span class="booking-detail-value"><?php echo isset($restaurant['DiaChi']) ? $restaurant['DiaChi'] : 'Không có thông tin'; ?></span>
-                    </div>
-                    <div class="booking-detail-item">
-                        <span class="booking-detail-label">Khu vực:</span>
-                        <span class="booking-detail-value"><?php echo isset($area['Ten']) ? $area['Ten'] . ' - Tầng ' . $area['Tang'] : 'Chưa xác định'; ?></span>
-                    </div>
-                    <div class="booking-detail-item">
-                        <span class="booking-detail-label">Bàn:</span>
-                        <span class="booking-detail-value"><?php echo isset($table['SoBang']) ? 'Bàn số ' . $table['SoBang'] : 'Chưa xác định'; ?></span>
-                    </div>
-                    <div class="booking-detail-item">
-                        <span class="booking-detail-label">Thời gian đặt bàn:</span>
-                        <span class="booking-detail-value">
-                            <?php 
-                                echo isset($booking['ThoiGianDatBan']) 
-                                    ? date('H:i - d/m/Y', strtotime($booking['ThoiGianDatBan'])) 
-                                    : 'Không có thông tin';
-                            ?>
-                        </span>
-                    </div>
+                    <!-- Trong phần hiển thị thông tin nhà hàng -->
+<div class="booking-detail-item">
+    <span class="booking-detail-label">Nhà hàng:</span>
+    <span class="booking-detail-value">
+        <?php 
+        if ($restaurant) {
+            echo htmlspecialchars($restaurant['TenNhaHang']);
+        } else {
+            // Thử lấy thông tin từ booking nếu có sẵn
+            if (!empty($booking['chiTietDatBans']) && 
+                !empty($booking['chiTietDatBans'][0]['ban']) && 
+                !empty($booking['chiTietDatBans'][0]['ban']['khu_vuc']) &&
+                !empty($booking['chiTietDatBans'][0]['ban']['khu_vuc']['nha_hang'])) {
+                echo htmlspecialchars($booking['chiTietDatBans'][0]['ban']['khu_vuc']['nha_hang']['TenNhaHang']);
+            } elseif (!empty($booking['chi_tiet_dat_bans']) && 
+                      !empty($booking['chi_tiet_dat_bans'][0]['ban']) && 
+                      !empty($booking['chi_tiet_dat_bans'][0]['ban']['khu_vuc']) &&
+                      !empty($booking['chi_tiet_dat_bans'][0]['ban']['khu_vuc']['nha_hang'])) {
+                echo htmlspecialchars($booking['chi_tiet_dat_bans'][0]['ban']['khu_vuc']['nha_hang']['TenNhaHang']);
+            } else {
+                echo 'Không có thông tin';
+            }
+        }
+        ?>
+    </span>
+</div>
+
+        <!-- Trong phần hiển thị địa chỉ -->
+        <div class="booking-detail-item">
+            <span class="booking-detail-label">Địa chỉ:</span>
+            <span class="booking-detail-value">
+                <?php 
+                if ($restaurant) {
+                    echo htmlspecialchars($restaurant['DiaChi']);
+                } else {
+                    // Thử lấy thông tin từ booking nếu có sẵn
+                    if (!empty($booking['chiTietDatBans']) && 
+                        !empty($booking['chiTietDatBans'][0]['ban']) && 
+                        !empty($booking['chiTietDatBans'][0]['ban']['khu_vuc']) &&
+                        !empty($booking['chiTietDatBans'][0]['ban']['khu_vuc']['nha_hang'])) {
+                        echo htmlspecialchars($booking['chiTietDatBans'][0]['ban']['khu_vuc']['nha_hang']['DiaChi']);
+                    } elseif (!empty($booking['chi_tiet_dat_bans']) && 
+                            !empty($booking['chi_tiet_dat_bans'][0]['ban']) && 
+                            !empty($booking['chi_tiet_dat_bans'][0]['ban']['khu_vuc']) &&
+                            !empty($booking['chi_tiet_dat_bans'][0]['ban']['khu_vuc']['nha_hang'])) {
+                        echo htmlspecialchars($booking['chi_tiet_dat_bans'][0]['ban']['khu_vuc']['nha_hang']['DiaChi']);
+                    } else {
+                        echo 'Không có thông tin';
+                    }
+                }
+                ?>
+            </span>
+        </div>
+
+        <!-- Trong phần hiển thị khu vực -->
+        <div class="booking-detail-item">
+            <span class="booking-detail-label">Khu vực:</span>
+            <span class="booking-detail-value">
+                <?php 
+                if ($area) {
+                    echo htmlspecialchars($area['Ten'] . ' - Tầng ' . $area['Tang']);
+                } else {
+                    // Thử lấy thông tin từ booking nếu có sẵn
+                    if (!empty($booking['chiTietDatBans']) && 
+                        !empty($booking['chiTietDatBans'][0]['ban']) && 
+                        !empty($booking['chiTietDatBans'][0]['ban']['khu_vuc'])) {
+                        $areaData = $booking['chiTietDatBans'][0]['ban']['khu_vuc'];
+                        echo htmlspecialchars($areaData['Ten'] . ' - Tầng ' . $areaData['Tang']);
+                    } elseif (!empty($booking['chi_tiet_dat_bans']) && 
+                            !empty($booking['chi_tiet_dat_bans'][0]['ban']) && 
+                            !empty($booking['chi_tiet_dat_bans'][0]['ban']['khu_vuc'])) {
+                        $areaData = $booking['chi_tiet_dat_bans'][0]['ban']['khu_vuc'];
+                        echo htmlspecialchars($areaData['Ten'] . ' - Tầng ' . $areaData['Tang']);
+                    } else {
+                        echo 'Chưa xác định';
+                    }
+                }
+                ?>
+            </span>
+        </div>
+
+        <!-- Trong phần hiển thị bàn -->
+        <div class="booking-detail-item">
+            <span class="booking-detail-label">Bàn:</span>
+            <span class="booking-detail-value">
+                <?php 
+                if ($table) {
+                    echo 'Bàn số ' . htmlspecialchars($table['SoBang']);
+                } else {
+                    // Thử lấy thông tin từ booking nếu có sẵn
+                    if (!empty($booking['chiTietDatBans']) && 
+                        !empty($booking['chiTietDatBans'][0]['ban'])) {
+                        echo 'Bàn số ' . htmlspecialchars($booking['chiTietDatBans'][0]['ban']['SoBang']);
+                    } elseif (!empty($booking['chi_tiet_dat_bans']) && 
+                            !empty($booking['chi_tiet_dat_bans'][0]['ban'])) {
+                        echo 'Bàn số ' . htmlspecialchars($booking['chi_tiet_dat_bans'][0]['ban']['SoBang']);
+                    } else {
+                        echo 'Chưa xác định';
+                    }
+                }
+                ?>
+            </span>
+        </div>
                     <div class="booking-detail-item">
                         <span class="booking-detail-label">Số lượng khách:</span>
                         <span class="booking-detail-value"><?php echo $booking['SoLuongKhach'] ?? 'Không có thông tin'; ?> người</span>
@@ -271,13 +374,13 @@ if (!empty($booking['chiTietDatBans']) && !empty($booking['chiTietDatBans'][0]))
                 </div>
 
                 <div class="action-buttons">
-                    <a href="my-bookings.php" class="theme-btn">
+                    <a href="/restaurant-website/public/" class="theme-btn">
                         <span class="button-content-wrapper d-flex align-items-center">
                             <span class="button-icon"><i class="fas fa-calendar-alt"></i></span>
                             <span class="button-text">Xem đặt bàn của tôi</span>
                         </span>
                     </a>
-                    <a href="menu.php" class="theme-btn bg-secondary">
+                    <a href="/restaurant-website/public/menu" class="theme-btn bg-secondary">
                         <span class="button-content-wrapper d-flex align-items-center">
                             <span class="button-icon"><i class="fas fa-utensils"></i></span>
                             <span class="button-text">Xem thực đơn</span>

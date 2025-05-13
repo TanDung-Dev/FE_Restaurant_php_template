@@ -282,24 +282,23 @@ switch ($path) {
                 exit;
             }
             exit;
-
-        
-    
-// Thêm vào phần switch case của index.php
-case '/payment/momo-qr':
-    if (isLoggedIn()) {
-        require __DIR__ . '/../views/payment/momo-qr.php';
-    } else {
-        header('Location: /restaurant-website/public/login?redirect=payment/momo-qr');
-        exit;
-    }
-    exit;
+            case '/payment/momo-payment':
+                if (isLoggedIn()) {
+                    require __DIR__ . '/../views/payment/momo-payment.php';
+                } else {
+                    header('Location: /restaurant-website/public/login?redirect=payment/momo-payment');
+                    exit;
+                }
+                exit;
             
-    default:
-        // Trang lỗi 404 nếu không tìm thấy route
-        http_response_code(404);
-        require __DIR__ . '/../views/error.php';
-        exit;
+            case '/payment/momo-redirect':
+                if (isLoggedIn()) {
+                    require __DIR__ . '/../views/payment/momo-redirect.php';
+                } else {
+                    header('Location: /restaurant-website/public/login?redirect=payment/momo-redirect');
+                    exit;
+                }
+                exit;
 }
 ?>
 
